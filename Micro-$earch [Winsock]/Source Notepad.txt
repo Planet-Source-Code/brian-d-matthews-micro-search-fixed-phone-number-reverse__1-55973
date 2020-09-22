@@ -1,0 +1,123 @@
+1543' |---|-----------------------------------------|---|
+'-[_________________________________________________|
+'__[PlanetSourceCode.Com]___________________________)
+'-[Micro Search]-: Created by: Brian Matthews [...]|)
+'-[YCrack.Net]-: (C) Copyright 2004 YCrack : -[tm]-/|
+'-[Credits:  http://YCrack.Net][http://YahPro.Org]-/|
+'-[From: YahPro: keith_escalade [Analyze]:(Parsing)/|
+'__[Microsoft-Murder_[Inc]_________________________/|
+'__[Release_Date]:___[03/20/04]____________________/|
+'____________________[Comments]____________________/|
+'__Begin: [Declarations]___________________________/|
+Private Declare Function InitCommonControls Lib "Comctl32.dll" () As Long
+Dim AreaCode As String    '________________________/|
+Dim PhoneNumber As String '________________________/|
+Dim AllData As String     '________________________/|
+'__End:   [Declarations]___________________________/|
+'-[________________________________________________/|
+'-[________________________________________________|)
+' |---|-----------------------------------------|---|
+Private Sub Form_Initialize()
+Dim X As Long
+X = InitCommonControls
+End Sub
+Private Sub Command1_Click()
+If Text1.Text = "" Or Text2.Text = "" Then SB1.Caption = "Invalid Phone Number...": Exit Sub
+If Len(Text1.Text) < 3 Or Len(Text2.Text) < 7 Then SB1.Caption = "Invalid Phone Number Length...": Exit Sub
+Winsock1.Close
+Winsock1.Connect
+AreaCode = Text1.Text
+PhoneNumber = Text2.Text
+Command1.Enabled = False
+Command2.Enabled = True
+SB1.Caption = "Processing Phone Number: " & "(" & Text1 & ")" & " " & Text2 & "..."
+Label4.Width = Label3.Width / 4
+Label5.Caption = "25%"
+End Sub
+Private Sub Command1_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Command1.BackStyle = 1
+End Sub
+Private Sub Command1_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Command1.BackStyle = 0
+End Sub
+Private Sub Command2_Click()
+Winsock1.Close
+SB1.Caption = "Process Canceled..."
+Command2.Enabled = False
+Command1.Enabled = True
+Label4.Width = 0
+End Sub
+Private Sub Command2_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Command2.BackStyle = 1
+End Sub
+Private Sub Command2_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Command2.BackStyle = 0
+End Sub
+Private Sub Form_Unload(Cancel As Integer)
+Winsock1.Close: End
+End Sub
+
+Private Sub Text1_Change()
+If IsNumeric(Text1.Text) = False Then SendKeys "{BackSpace}": Exit Sub
+If Len(Text1.Text) = 3 Then Text2.SetFocus
+End Sub
+Private Sub Text2_Change()
+If IsNumeric(Text2.Text) = False Then SendKeys "{BackSpace}": Exit Sub
+End Sub
+
+Private Sub Winsock1_Close()
+On Error Resume Next
+Label4.Width = Label3.Width
+Label5.Caption = "100%"
+Command1.Enabled = True
+Command2.Enabled = False
+If InStr(1, AllData, "Search Information:") Then
+SB1.Caption = "Processing Complete...": ProcessAddress
+Else
+SB1.Caption = "No Results...": List1.Clear: Exit Sub
+End If
+Exit Sub
+End Sub
+Private Sub Winsock1_Connect()
+On Error Resume Next
+AllData = ""
+Winsock1.SendData "GET http://www.whitepages.com/search/Reverse_Phone?npa=" & AreaCode & "&phone=" & PhoneNumber & vbCrLf & vbCrLf
+Label4.Width = Label3.Width / 2
+Label5.Caption = "50%"
+End Sub
+Private Sub Winsock1_DataArrival(ByVal bytesTotal As Long)
+On Error Resume Next
+Dim Data As String
+Dim EXtra As Integer
+Winsock1.GetData Data
+AllData = AllData & Data
+EXtra = Label3.Width / 100
+Label4.Width = EXtra * 75
+Label5.Caption = "75%"
+End Sub
+Private Sub Winsock1_Error(ByVal Number As Integer, Description As String, ByVal Scode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
+On Error Resume Next
+Winsock1.Close
+Command1.Enabled = True
+Command2.Enabled = False
+SB1.Caption = Description
+Label4.Width = 0
+End Sub
+Private Sub ProcessAddress()
+On Error Resume Next
+Dim Needed As String
+Dim FullName As String
+List1.Clear
+Needed = Get_Between(1, AllData, "<span class=""text"" style=""line-height:13pt;"">", "<br></span>")
+FullName = Get_Between(1, AllData, "<img src=""/static/common/trans.gif"" width=""1"" height=""12"" border=""0""><a href=""javascript:moreInfo(1);""", "</td></tr>")
+FullName = Replace(FullName, vbLf, "")
+FullName = Replace(FullName, "</a>", "")
+FullName = Replace(FullName, ">", "")
+FullName = Replace(FullName, Chr(9), "")
+FullName = Replace(FullName, ",", ", ")
+FullName = Replace(FullName, "&amp;", "&")
+List1.AddItem FullName
+List1.AddItem Get_Item(1, Needed, "<br>")
+List1.AddItem Get_Item(2, Needed, "<br>")
+List1.AddItem Get_Item(3, Needed, "<br>")
+End Sub
